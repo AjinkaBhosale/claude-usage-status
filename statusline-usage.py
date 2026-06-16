@@ -17,11 +17,22 @@ import sys
 from datetime import datetime
 
 # Per-million-token rates: input, output, cache-write (1.25x in), cache-read (0.1x in).
+# Keys are matched as substrings of the model ID — more specific keys must come first.
 # Adjust these to match current Anthropic pricing for the models you use.
 RATES = {
-    "opus":   {"in": 15.0, "out": 75.0, "cw": 18.75, "cr": 1.5},
-    "sonnet": {"in": 3.0,  "out": 15.0, "cw": 3.75,  "cr": 0.3},
-    "haiku":  {"in": 1.0,  "out": 5.0,  "cw": 1.25,  "cr": 0.1},
+    # Opus 4.0 (claude-opus-4-20250514) and Opus 4.1 (claude-opus-4-1-20250805) —
+    # these older deprecated models had higher pricing before Opus 4.5.
+    "opus-4-1":        {"in": 15.0, "out": 75.0, "cw": 18.75, "cr": 1.5},
+    "opus-4-20250514": {"in": 15.0, "out": 75.0, "cw": 18.75, "cr": 1.5},
+    # Opus 4.5 / 4.6 / 4.7 / 4.8 and any future Opus 4.x
+    "opus":            {"in": 5.0,  "out": 25.0, "cw": 6.25,  "cr": 0.5},
+    # Fable 5 / Mythos 5
+    "fable":           {"in": 10.0, "out": 50.0, "cw": 12.5,  "cr": 1.0},
+    "mythos":          {"in": 10.0, "out": 50.0, "cw": 12.5,  "cr": 1.0},
+    # Sonnet (all versions — 4.0, 4.5, 4.6 all share the same rate)
+    "sonnet":          {"in": 3.0,  "out": 15.0, "cw": 3.75,  "cr": 0.3},
+    # Haiku
+    "haiku":           {"in": 1.0,  "out": 5.0,  "cw": 1.25,  "cr": 0.1},
 }
 
 

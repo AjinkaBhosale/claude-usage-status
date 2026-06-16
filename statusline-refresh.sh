@@ -20,11 +20,11 @@ if command -v rtk >/dev/null 2>&1; then
   PCT=$(printf '%s\n' "$GRAPH" | awk '/^Tokens saved:/{gsub(/[()]/,"",$4); print $4; exit}')
   TODAY_SAVED=$(printf '%s\n' "$GRAPH" | awk -v d="$TODAY" '$1==d{print $NF}')
 
-  jq -n \
-    --arg total "${TOTAL:-0}" \
-    --arg pct "${PCT:-}" \
-    --arg today "${TODAY_SAVED:-0}" \
-    '{total_saved:$total, total_pct:$pct, today_saved:$today}' > "$RTK_CACHE"
+  python3 -c "
+import json, sys
+data = {'total_saved': '${TOTAL:-0}', 'total_pct': '${PCT:-}', 'today_saved': '${TODAY_SAVED:-0}'}
+print(json.dumps(data))
+" > "$RTK_CACHE"
 fi
 
 rmdir "$LOCK" 2>/dev/null
