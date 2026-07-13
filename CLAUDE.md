@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Claude Code status line plugin — five shell scripts and one Python aggregator that render a two-line bar showing model, repo/branch, context usage, session cost/timer, and today/MTD spend.
+A Claude Code status line plugin — shell scripts and Python scripts that render a two-line bar showing model, repo/branch, context usage, session cost/timer, and today/MTD spend. Also includes a suite of analysis scripts for spend breakdowns, cache efficiency, budget enforcement, and reporting.
 
-## Install
+## Install (core status line)
 
 ```bash
 cp statusline.sh statusline-refresh.sh statusline-usage.py \
@@ -15,17 +15,21 @@ chmod +x ~/.claude/statusline.sh ~/.claude/statusline-refresh.sh \
          ~/.claude/statusline-show.sh ~/.claude/statusline-toggle.sh
 ```
 
-Then wire it into `~/.claude/settings.json` (use `settings.snippet.json` as a template):
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "/Users/YOUR_USERNAME/.claude/statusline.sh"
-  }
-}
+Wire into `~/.claude/settings.json` using `settings.snippet.json` as a template.
+
+## Install (analysis scripts)
+
+```bash
+cp statusline_core.py statusline-epic-report.py statusline-cache-analyzer.py \
+   statusline-model-advisor.py statusline-dashboard.py statusline-budget-check.sh \
+   statusline-waste-detector.py statusline-jira-post.py statusline-corporate-report.py \
+   ~/.claude/
+chmod +x ~/.claude/statusline-budget-check.sh
 ```
 
 ## Scripts
+
+### Core status line
 
 | Script | Role |
 |--------|------|
@@ -34,6 +38,20 @@ Then wire it into `~/.claude/settings.json` (use `settings.snippet.json` as a te
 | `statusline-usage.py` | Scans `~/.claude/projects/**/*.jsonl`, sums per-model token usage, prices it, buckets by local date, writes cache JSON. |
 | `statusline-toggle.sh` | Creates/removes `~/.claude/.statusline-hidden` to show/hide the bar. |
 | `statusline-show.sh` | Prints the last cached render from `~/.claude/.statusline-last.ansi`. |
+
+### Analysis scripts (run from repo dir or `~/.claude/`)
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `statusline_core.py` | Shared library — `RATES`, `iter_usage_records()`, `iter_all_lines()`. Not run directly. |  |
+| `statusline-epic-report.py` | Cost by Jira epic/ticket | `python statusline-epic-report.py --days 30` |
+| `statusline-cache-analyzer.py` | Cache hit-rate per project | `python statusline-cache-analyzer.py` |
+| `statusline-model-advisor.py` | Flag over-qualified Opus sessions | `python statusline-model-advisor.py` |
+| `statusline-dashboard.py` | Generate self-contained HTML spend dashboard | `python statusline-dashboard.py --output dashboard.html` |
+| `statusline-budget-check.sh` | Budget gate (Stop hook friendly, exits 0/1/2) | `statusline-budget-check.sh [--epic CSA-12345]` |
+| `statusline-waste-detector.py` | Detect re-reads, cold cache, trivial Opus | `python statusline-waste-detector.py --days 7` |
+| `statusline-jira-post.py` | Post epic cost to Jira (dry-run safe) | `python statusline-jira-post.py --epic CSA-12345` |
+| `statusline-corporate-report.py` | All-in-one report: budget, model mix, cache, waste, epics | `python statusline-corporate-report.py --period week` or `--month 2026-06 --format html` |
 
 ## Cache files (auto-created under `~/.claude/`)
 
@@ -46,19 +64,43 @@ Then wire it into `~/.claude/settings.json` (use `settings.snippet.json` as a te
 | `.statusline-hidden` | Presence suppresses all output |
 | `.notify-<key>` | Per-threshold cooldown flags for Windows toast notifications |
 
+## Budget config
+
+Copy `.claude-budget.json.example` to `.claude-budget.json` in any project dir or `~/.claude/`:
+
+```json
+{ "daily": 20, "mtd": 200, "epic": { "CSA-12345": 50 } }
+```
+
+`statusline-budget-check.sh` exits `0` (OK), `1` (>80% of any limit), or `2` (over budget) — suitable for use as a Claude Code Stop hook.
+
+## Jira integration
+
+Set env vars or write to `~/.claude/.jira-config` (one `KEY=value` per line):
+
+```bash
+export JIRA_URL=https://yourorg.atlassian.net
+export JIRA_EMAIL=you@example.com
+export JIRA_API_TOKEN=your_token_here
+```
+
 ## Architecture decisions
 
 **Non-blocking render**: `statusline.sh` triggers `statusline-refresh.sh` via `nohup ... &` only when the cache is missing or older than 60s. The render always completes immediately using cached data.
 
-**Deduplication**: `statusline-usage.py` deduplicates on `(message.id, requestId)` to handle the same API response appearing in multiple files (compacted/resumed sessions).
+**Shared library (`statusline_core.py`)**: All analysis scripts import `RATES`, `iter_usage_records()`, and `iter_all_lines()` from this module. Update pricing here once; everything picks it up.
 
-**JSON parsing**: Uses `python3 -c` everywhere; `jq` is not required.
+**Deduplication**: `iter_usage_records()` deduplicates on `(message.id, requestId)` to handle the same API response appearing in multiple files (compacted/resumed sessions).
 
-**Windows notifications**: `statusline.sh` writes a `.ps1` file and calls `powershell.exe` via `disown`ed background process. Falls back silently if `powershell.exe` or `cygpath` are absent.
+**JSON parsing**: Uses `python3` everywhere; `jq` is not required.
+
+**Windows notifications**: `statusline.sh` writes a `.ps1` file and calls `powershell.exe` via a `disown`ed background process. Falls back silently if `powershell.exe` or `cygpath` are absent.
+
+**Rate matching**: `RATES` keys are matched as substrings of the model ID. More specific keys (e.g. `"opus-4-1"`) must appear before broader ones (e.g. `"opus"`). An unknown model contributes tokens but $0 cost.
 
 ## Updating pricing
 
-Edit the `RATES` dict at the top of `statusline-usage.py`. Keys are matched as **substrings** of the model ID — more specific keys must appear before broader ones (e.g. `"opus-4-1"` before `"opus"`).
+Edit `RATES` at the top of `statusline_core.py`. The standalone `statusline-usage.py` has its own copy of `RATES` for installs that don't use the analysis suite — keep both in sync.
 
 ## Customizing
 

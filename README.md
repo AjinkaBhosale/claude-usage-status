@@ -157,6 +157,57 @@ but $0 cost** — so an unknown model silently undercounts spend.
 - **Notification cooldown** — the `-mmin +10` test in the `_notify()` function
   controls how often the same threshold can re-fire (default: 10 minutes).
 
+## New Analysis Scripts
+
+Run any of these from the repo directory (or copy to `~/.claude/`).
+First copy `statusline_core.py` to `~/.claude/` alongside the existing scripts.
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `statusline-epic-report.py` | Cost by Jira epic/ticket | `python statusline-epic-report.py --days 30` |
+| `statusline-cache-analyzer.py` | Cache hit-rate per project | `python statusline-cache-analyzer.py` |
+| `statusline-model-advisor.py` | Flag over-qualified Opus sessions | `python statusline-model-advisor.py` |
+| `statusline-dashboard.py` | Generate HTML spend dashboard | `python statusline-dashboard.py --output dashboard.html` |
+| `statusline-budget-check.sh` | Budget gate (Stop hook friendly) | `statusline-budget-check.sh [--epic CSA-12345]` |
+| `statusline-waste-detector.py` | Detect re-reads, cold cache, trivial Opus | `python statusline-waste-detector.py --days 7` |
+| `statusline-jira-post.py` | Post epic cost to Jira (dry-run safe) | `python statusline-jira-post.py --epic CSA-12345` |
+
+### Installation
+
+```bash
+cp statusline_core.py ~/.claude/
+cp statusline-epic-report.py ~/.claude/
+cp statusline-cache-analyzer.py ~/.claude/
+cp statusline-model-advisor.py ~/.claude/
+cp statusline-dashboard.py ~/.claude/
+cp statusline-budget-check.sh ~/.claude/
+cp statusline-waste-detector.py ~/.claude/
+cp statusline-jira-post.py ~/.claude/
+chmod +x ~/.claude/statusline-budget-check.sh
+```
+
+### Budget config
+
+Copy `.claude-budget.json.example` to `.claude-budget.json` in any project dir (or `~/.claude/`):
+
+```json
+{ "daily": 20, "mtd": 200, "epic": { "CSA-12345": 50 } }
+```
+
+### Jira integration
+
+Set env vars before running `statusline-jira-post.py`:
+
+```bash
+export JIRA_URL=https://yourorg.atlassian.net
+export JIRA_EMAIL=you@example.com
+export JIRA_API_TOKEN=your_token_here
+```
+
+Or write them to `~/.claude/.jira-config` (one `KEY=value` per line).
+
+---
+
 ## Notes
 
 - Token cost is an **estimate** based on the rates you configure; it won't match
