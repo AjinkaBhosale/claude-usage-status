@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claude Code — July 2026 (MTD) Corporate Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;
+      padding:28px 32px;max-width:1280px;margin:0 auto}
+h1{font-size:1.6rem;color:#79c0ff;margin-bottom:4px}
+.meta{color:#8b949e;font-size:0.82rem;margin-bottom:28px}
+.meta strong{color:#e6edf3}
+/* layout grids */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.three{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:18px}
+.full{margin-bottom:18px}
+/* cards */
+.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:18px}
+.card h2{font-size:0.70rem;text-transform:uppercase;letter-spacing:1px;color:#8b949e;margin-bottom:14px}
+/* KPI values */
+.kpi{font-size:2rem;font-weight:700;color:#e3b341;line-height:1.1}
+.kpi-sub{font-size:0.76rem;color:#8b949e;margin-top:4px}
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:0.8rem}
+th{text-align:left;color:#8b949e;padding:7px 8px;border-bottom:1px solid #30363d;
+    font-weight:500;font-size:0.70rem;text-transform:uppercase;letter-spacing:0.5px}
+td{padding:7px 8px;border-bottom:1px solid #21262d}
+td:not(:first-child),th:not(:first-child){text-align:right}
+td:nth-child(2){color:#e3b341}
+/* budget bar */
+.b-row{margin-bottom:14px}
+.b-meta{display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:5px}
+.b-track{background:#21262d;border-radius:4px;height:8px}
+.b-fill{height:8px;border-radius:4px}
+/* waste + insights lists */
+ul.wl,ul.il{list-style:none;padding:0}
+ul.wl li,ul.il li{padding:8px 0;border-bottom:1px solid #21262d;font-size:0.82rem;line-height:1.5}
+ul.wl li:last-child,ul.il li:last-child{border-bottom:none}
+ul.wl li::before{content:"⚠ ";color:#e3b341}
+ul.wl li[style*="3fb950"]::before{content:"✓ ";color:#3fb950}
+ul.il li::before{content:"→ ";color:#79c0ff}
+.donut-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.legend{flex:1}
+/* cache metrics */
+.cache-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cm{background:#0d1117;border-radius:6px;padding:10px 14px}
+.cm-label{font-size:0.70rem;text-transform:uppercase;letter-spacing:0.5px;color:#8b949e;margin-bottom:4px}
+.cm-val{font-size:1.1rem;font-weight:600;color:#e6edf3}
+@media print{
+  body{background:#fff;color:#000;padding:12px}
+  .card{border:1px solid #ccc;background:#fafafa}
+  .kpi{color:#b05c00}.meta{color:#555}
+}
+</style>
+</head><body>
+
+<h1>Claude Code &mdash; Corporate Usage Report</h1>
+<p class="meta">
+  Period: <strong>July 2026 (MTD)</strong> &nbsp;&middot;&nbsp;
+  2026-07-01 &rarr; 2026-07-01 &nbsp;&middot;&nbsp;
+  Generated 2026-07-01 15:05
+</p>
+
+<!-- KPI row -->
+<div class="kpi-grid">
+  <div class="card"><h2>Total Spend</h2>
+    <div class="kpi">$1.09</div>
+    <div class="kpi-sub">1 active of 1 days</div></div>
+  <div class="card"><h2>Total Tokens</h2>
+    <div class="kpi">998.9K</div>
+    <div class="kpi-sub">input + output + cache</div></div>
+  <div class="card"><h2>Avg Daily</h2>
+    <div class="kpi">$1.09</div>
+    <div class="kpi-sub">per active day</div></div>
+  <div class="card"><h2>Cache Hit Rate</h2>
+    <div class="kpi" style="color:#3fb950">100.0%</div>
+    <div class="kpi-sub">$2.29 saved vs no-cache</div></div>
+  <div class="card"><h2>Est. Waste</h2>
+    <div class="kpi" style="color:#3fb950">$0.00</div>
+    <div class="kpi-sub">avoidable spend</div></div>
+  <div class="card"><h2>Model Savings</h2>
+    <div class="kpi" style="color:#d2a8ff">$0.00</div>
+    <div class="kpi-sub">0 Opus→Sonnet candidates</div></div>
+</div>
+
+
+
+<!-- Daily chart -->
+<div class="card full"><h2>Daily Spend</h2><svg viewBox="0 0 780 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px"><rect x="20" y="12" width="737" height="126" fill="#e3b341" rx="2" opacity="0.88"><title>2026-07-01: $1.0931</title></rect><text x="388" y="149" text-anchor="middle" fill="#8b949e" font-size="9">07-01</text><line x1="20" y1="138" x2="760" y2="138" stroke="#30363d" stroke-width="1"/></svg></div>
+
+<!-- Model breakdown + donut -->
+<div class="three">
+  <div class="card">
+    <h2>Model Breakdown</h2>
+    <table>
+      <tr><th>Model</th><th>Cost</th><th>Share</th><th>Tokens</th><th>Cache%</th><th>Calls</th></tr>
+      <tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#79c0ff;margin-right:6px"></span>claude-sonnet-4-6</td><td>$1.09</td><td>100.0%</td><td>998.9K</td><td>100.0%</td><td>17</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Model Mix</h2>
+    <div class="donut-wrap"><svg viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg" style="width:130px;height:130px"><circle cx="65" cy="65" r="55" fill="#79c0ff" opacity="0.88"/><circle cx="65" cy="65" r="27" fill="#0d1117"/></svg><div class="legend"><span style="display:inline-flex;align-items:center;gap:5px;margin:4px 12px 4px 0;font-size:0.78rem"><span style="width:10px;height:10px;border-radius:2px;background:#79c0ff"></span>claude-sonnet-4-6 <span style="color:#8b949e">$1.09</span></span></div></div>
+  </div>
+</div>
+
+<!-- Cache + Waste -->
+<div class="two">
+  <div class="card">
+    <h2>Cache Efficiency</h2>
+    <div class="cache-grid">
+      <div class="cm"><div class="cm-label">Hit Rate</div>
+        <div class="cm-val" style="color:#3fb950">100.0%</div></div>
+      <div class="cm"><div class="cm-label">Savings</div>
+        <div class="cm-val" style="color:#3fb950">$2.29</div></div>
+      <div class="cm"><div class="cm-label">Cache Reads</div>
+        <div class="cm-val">873.1K</div></div>
+      <div class="cm"><div class="cm-label">Fresh Input</div>
+        <div class="cm-val">25</div></div>
+      <div class="cm"><div class="cm-label">Cache Writes</div>
+        <div class="cm-val">93.7K</div></div>
+      <div class="cm"><div class="cm-label">Output</div>
+        <div class="cm-val">32.0K</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Waste Analysis</h2>
+    <ul class="wl"><li><strong>1</strong> cold-cache sessions (&gt;10 turns, 0 cache reads) — ~$0.00 impact</li></ul>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid #30363d;
+                display:flex;justify-content:space-between;font-size:0.82rem">
+      <span style="color:#8b949e">Estimated total waste</span>
+      <strong style="color:#3fb950">$0.00</strong>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Insights -->
+<div class="card full">
+  <h2>Key Insights &amp; Recommendations</h2>
+  <ul class="il"><li>Cache efficiency is strong (100.0% hit rate), already saving $2.29 this period vs a no-cache baseline.</li><li>claude-sonnet-4-6 drives 100% of spend — cost profile is highly predictable.</li></ul>
+</div>
+
+</body></html>

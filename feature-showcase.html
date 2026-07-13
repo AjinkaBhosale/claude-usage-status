@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Usage Status — Feature Roadmap</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+  --border: #30363d; --text: #e6edf3; --dim: #8b949e;
+  --cyan: #79c0ff; --green: #3fb950; --yellow: #e3b341;
+  --red: #f85149; --purple: #d2a8ff; --orange: #ffa657;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6}
+a{color:var(--cyan);text-decoration:none}
+header{padding:60px 40px 40px;text-align:center;border-bottom:1px solid var(--border)}
+header h1{font-size:2.2rem;font-weight:700;color:var(--cyan);letter-spacing:-0.5px}
+header h1 span{color:var(--text)}
+header p{color:var(--dim);margin-top:8px;font-size:1.05rem}
+.status-bar{display:inline-block;margin-top:20px;padding:10px 20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:'Cascadia Code','Fira Code',monospace;font-size:0.82rem;color:var(--dim)}
+.status-bar .c{color:var(--cyan)}.status-bar .g{color:var(--green)}.status-bar .y{color:var(--yellow)}
+main{max-width:1200px;margin:0 auto;padding:40px 24px}
+.section-title{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(121,192,255,0.2)}
+.card-header{display:flex;align-items:center;gap:14px;padding:18px 20px;cursor:pointer;user-select:none}
+.card-header:hover .card-title{color:var(--cyan)}
+.badge{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.card-meta{flex:1}
+.card-title{font-size:0.95rem;font-weight:600;font-family:'Cascadia Code','Fira Code',monospace;transition:color .2s}
+.card-desc{font-size:0.82rem;color:var(--dim);margin-top:2px}
+.impact{font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:4px;letter-spacing:0.5px}
+.impact-high{background:rgba(63,185,80,0.12);color:var(--green);border:1px solid rgba(63,185,80,0.25)}
+.impact-med{background:rgba(227,179,65,0.12);color:var(--yellow);border:1px solid rgba(227,179,65,0.25)}
+.chevron{color:var(--dim);font-size:0.8rem;transition:transform .25s;flex-shrink:0}
+.card.open .chevron{transform:rotate(180deg)}
+.card-body{display:none;padding:0 20px 20px}
+.card.open .card-body{display:block}
+.terminal{background:#0a0d13;border:1px solid var(--border);border-radius:6px;padding:14px 16px;font-family:'Cascadia Code','Fira Code',monospace;font-size:0.78rem;line-height:1.7;overflow-x:auto;margin-bottom:14px}
+.terminal .p{color:var(--green)}.terminal .c{color:var(--cyan)}.terminal .y{color:var(--yellow)}
+.terminal .g{color:var(--green)}.terminal .r{color:var(--red)}.terminal .d{color:var(--dim)}
+.terminal .w{color:var(--text)}.terminal .o{color:var(--orange)}
+.how-it-works{font-size:0.82rem;color:var(--dim)}
+.how-it-works h4{font-size:0.73rem;text-transform:uppercase;letter-spacing:0.8px;color:var(--dim);margin-bottom:8px;font-weight:600}
+.how-it-works ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.how-it-works ul li::before{content:'→ ';color:var(--cyan)}
+.savings{margin-top:10px;padding:8px 12px;background:var(--surface2);border-radius:6px;font-size:0.8rem;color:var(--green);border-left:2px solid var(--green)}
+.roadmap{margin-top:48px}
+.roadmap h2{font-size:1.1rem;font-weight:600;margin-bottom:20px;color:var(--text)}
+.road-list{display:flex;flex-wrap:wrap;gap:10px}
+.road-item{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:0.82rem}
+.road-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700}
+.road-item .label{font-family:'Cascadia Code','Fira Code',monospace}
+.road-item .why{color:var(--dim);font-size:0.76rem}
+footer{text-align:center;padding:32px;color:var(--dim);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px}
+</style>
+</head>
+<body>
+<header>
+  <h1><span>claude-usage-</span>status</h1>
+  <p>Feature Roadmap — 8 new scripts for deeper cost visibility &amp; savings</p>
+  <div class="status-bar">
+    [<span class="c">claude-sonnet-4-6</span>] 📁 claude-usage-status 🌿 <span class="c">main</span>
+    <span class="g">██████████</span> 12% ⏱ 3m22s<br>
+    &nbsp;&nbsp;<span class="c">Jun 23</span> ┃ sess <span class="y">$0.14</span> ┃ today <span class="y">$4.21</span>·<span class="c">1.4M</span> tok ┃ MTD <span class="y">$89.40</span>·<span class="c">29.8M</span> tok ┃ <span class="g">⚡</span> <span class="c">4.2K</span>/<span class="c">89.1K</span>
+  </div>
+</header>
+<main>
+  <p class="section-title">New Features</p>
+  <div class="grid" id="grid"></div>
+  <div class="roadmap">
+    <h2>Build Priority</h2>
+    <div class="road-list" id="roadmap"></div>
+  </div>
+</main>
+<footer>All scripts run locally · no data leaves your machine · stdlib only</footer>
+<script>
+const features = [
+  {n:1,title:"statusline-epic-report.py",desc:"Cost attribution by Jira epic or ticket",impact:"high",color:"#79c0ff",
+   terminal:`<span class="p">$</span> <span class="w">python statusline-epic-report.py --days 30</span>\n\n<span class="d">  Epic Cost Report · last 30 days</span>\n<span class="d">  ─────────────────────────────────────────────────</span>\n  <span class="c">CSA-12345</span>   <span class="y">$4.23</span>    <span class="c">142.3K</span>       3\n  <span class="c">CSA-12890</span>   <span class="y">$1.07</span>     <span class="c">38.1K</span>       1\n  <span class="c">ILLUM-5678</span>  <span class="y">$0.89</span>     <span class="c">29.4K</span>       2\n<span class="d">  ─────────────────────────────────────────────────</span>\n  Total       <span class="y">$6.19</span>    <span class="c">209.8K</span>       6`,
+   bullets:["Scans all transcript JSONL files for Jira ticket refs (CSA-\\d+, ILLUM-\\d+) in user messages","Decodes project path and runs git log to detect branch-encoded tickets","Groups cost + tokens by ticket, sorted by spend descending"],
+   savings:"Answers \"how much did this sprint cost in Claude?\" instantly"},
+  {n:2,title:"statusline-cache-analyzer.py",desc:"Cache hit-rate and dollar savings per project",impact:"high",color:"#3fb950",
+   terminal:`<span class="p">$</span> <span class="w">python statusline-cache-analyzer.py --days 30</span>\n\n<span class="d">  Cache Efficiency · last 30 days</span>\n<span class="d">  ────────────────────────────────────────────────────</span>\n  <span class="c">illum-webapp-actions</span>     <span class="g">72.4%</span>    <span class="y">$3.41</span>    <span class="g">✓ warm</span>\n  <span class="c">autoinsights-playwright</span>  <span class="y">41.2%</span>    <span class="y">$0.89</span>    <span class="y">~ cool</span>\n  <span class="c">claude-usage-status</span>       <span class="r">8.1%</span>    <span class="y">$0.12</span>    <span class="r">✗ cold</span>\n<span class="d">  ────────────────────────────────────────────────────</span>\n  Overall: <span class="g">58.3%</span> hit rate · <span class="y">$4.42</span> saved via cache`,
+   bullets:["Aggregates cache_creation and cache_read tokens per project","Computes hit rate = cache_read / (cache_read + fresh_input)","Projects at 0% hit rate flagged as cold"],
+   savings:"Often reveals $3–8/month in cache savings already happening"},
+  {n:3,title:"statusline-model-advisor.py",desc:"Flag over-qualified Opus sessions, quantify savings",impact:"high",color:"#d2a8ff",
+   terminal:`<span class="p">$</span> <span class="w">python statusline-model-advisor.py --days 30</span>\n\n<span class="d">  Model Advisor · last 30 days</span>\n  <span class="y">12 sessions</span> used Opus where Sonnet likely sufficed:\n\n  <span class="d">2026-06-18</span>  <span class="c">illum-webapp</span>   412 out tok  <span class="r">$0.08</span> → <span class="g">$0.02</span>\n  <span class="d">2026-06-19</span>  <span class="c">autoinsights</span>   389 out tok  <span class="r">$0.07</span> → <span class="g">$0.01</span>\n<span class="d">  ─────────────────────────────────────────────────────</span>\n  Potential monthly savings: <span class="g">$0.72</span>`,
+   bullets:["Identifies sessions where Opus was used but output < 500 tokens AND input < 5K tokens","Calculates what those sessions would have cost on Sonnet","Only flags sessions that fit the low-complexity profile"],
+   savings:"Average user saves $0.40–1.20/month by moving trivial queries to Sonnet"},
+  {n:4,title:"statusline-dashboard.py",desc:"Generate self-contained HTML spend dashboard",impact:"high",color:"#ffa657",
+   terminal:`<span class="p">$</span> <span class="w">python statusline-dashboard.py --days 30</span>\n\n  Generating <span class="c">claude-dashboard.html</span>...\n  <span class="g">✓</span> 30-day daily spend chart <span class="d">(inline SVG)</span>\n  <span class="g">✓</span> Model mix donut <span class="d">(inline SVG)</span>\n  <span class="g">✓</span> Top 10 projects by cost\n  <span class="g">✓</span> Cache savings summary\n  <span class="d">──────────────────────────────</span>\n  Saved: <span class="c">claude-dashboard.html</span>`,
+   bullets:["All charts are inline SVG — no Chart.js, no CDN, opens offline","Reads real usage cache and transcript data","Shareable with managers or finance without exposing raw data"],
+   savings:"One command for a shareable monthly spend report"},
+  {n:5,title:"statusline-budget-check.sh",desc:"Budget gate — exits non-zero when over threshold",impact:"med",color:"#e3b341",
+   terminal:`<span class="p">$</span> <span class="w">statusline-budget-check.sh</span>\n\n  Budget Check · 2026-06-23\n  <span class="d">──────────────────────────────────────────────────</span>\n  Daily  <span class="y">$8.41</span> / <span class="c">$20.00</span>  <span class="g">████████░░</span>  42%  <span class="g">✓ OK</span>\n  MTD   <span class="y">$89.20</span> / <span class="c">$200.00</span>  <span class="y">████████░░</span>  44%  <span class="y">⚠ watch</span>`,
+   bullets:["Reads .claude-budget.json from current dir or ~/.claude/","Exits 0=OK, 1=warning (>80%), 2=over budget","Wire into Claude Code Stop hook for automatic checks"],
+   savings:"Prevents bill shock before it hits"},
+  {n:6,title:"statusline-waste-detector.py",desc:"Detect file re-reads, cold-cache sessions, trivial Opus",impact:"med",color:"#f85149",
+   terminal:`<span class="p">$</span> <span class="w">python statusline-waste-detector.py --days 7</span>\n\n<span class="d">  Waste Report · last 7 days</span>\n  <span class="y">File re-reads</span> (5+ times per session):\n  <span class="d">  reducers.ts</span>  read <span class="r">8×</span>  <span class="r">~$0.14</span> waste\n\n  <span class="y">Cold cache sessions</span> (&gt;10 turns, 0 cache reads):\n  <span class="d">  illum-webapp 2026-06-21</span>  18 turns  <span class="r">~$0.32</span>\n  Estimated weekly waste: <span class="r">$0.64</span>`,
+   bullets:["Scans user message text for repeated file path strings within a session","Detects conversations with 10+ turns but zero cache_read_input_tokens","Flags Opus sessions with fewer than 200 output tokens"],
+   savings:"Identifies patterns that quietly compound into $3–5/month waste"},
+  {n:7,title:"statusline-refresh.sh (extended)",desc:"RTK per-command savings drill-down",impact:"med",color:"#79c0ff",
+   terminal:`<span class="p">$</span> <span class="w">cat ~/.claude/.statusline-rtk-detail-cache.json</span>\n{\n  <span class="c">"total_saved_usd"</span>: <span class="y">"4.21"</span>,\n  <span class="c">"top_command"</span>: <span class="g">"git"</span>,\n  <span class="c">"by_command"</span>: {\n    <span class="c">"git"</span>: { <span class="c">"calls"</span>: <span class="y">234</span>, <span class="c">"saved_usd"</span>: <span class="y">"2.18"</span> },\n    <span class="c">"npm"</span>: { <span class="c">"calls"</span>:  <span class="y">41</span>, <span class="c">"saved_usd"</span>: <span class="y">"0.97"</span> }\n  }\n}`,
+   bullets:["Extends the existing rtk integration in statusline-refresh.sh","Parses rtk gain --history for per-command-type savings breakdown","Caches to .statusline-rtk-detail-cache.json"],
+   savings:"Shows which commands save the most — git typically 50%+ of RTK savings"},
+  {n:8,title:"statusline-jira-post.py",desc:"Post epic cost summary as a Jira comment",impact:"med",color:"#3fb950",
+   terminal:`<span class="p">$</span> <span class="w">python statusline-jira-post.py --epic CSA-12345</span>\n\n  Epic Cost Summary — <span class="c">CSA-12345</span>\n  Sessions:  <span class="y">3</span>  ·  Tokens: <span class="c">142,341</span>  ·  Cost: <span class="y">$4.23</span>\n  <span class="d">──────────────────────────────────────────────────</span>\n  <span class="d">[dry-run] Use --post to submit to Jira</span>`,
+   bullets:["Reuses epic-report logic to attribute sessions to the ticket","Formats a clean summary: date range, sessions, tokens, cost","Requires JIRA_URL + JIRA_EMAIL + JIRA_API_TOKEN; --dry-run always safe"],
+   savings:"Attach AI cost data to sprint epics for retros and capacity planning"}
+];
+const roadmap=[
+  {n:1,label:"statusline_core.py",why:"foundation",color:"#79c0ff"},
+  {n:2,label:"statusline-usage.py refactor",why:"backward compat",color:"#3fb950"},
+  {n:3,label:"statusline-epic-report.py",why:"highest value",color:"#79c0ff"},
+  {n:4,label:"statusline-cache-analyzer.py",why:"low effort",color:"#3fb950"},
+  {n:5,label:"statusline-model-advisor.py",why:"quick wins",color:"#d2a8ff"},
+  {n:6,label:"statusline-dashboard.py",why:"visibility",color:"#ffa657"},
+  {n:7,label:"statusline-budget-check.sh",why:"control",color:"#e3b341"},
+  {n:8,label:"statusline-waste-detector.py",why:"behavioural",color:"#f85149"},
+  {n:9,label:"statusline-refresh.sh ext.",why:"extends RTK",color:"#79c0ff"},
+  {n:10,label:"statusline-jira-post.py",why:"opt-in only",color:"#3fb950"}
+];
+const grid=document.getElementById('grid');
+features.forEach(f=>{
+  const card=document.createElement('div');
+  card.className='card';
+  card.innerHTML=`
+    <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="badge" style="background:${f.color}20;color:${f.color};border:1px solid ${f.color}40">${f.n}</div>
+      <div class="card-meta">
+        <div class="card-title">${f.title}</div>
+        <div class="card-desc">${f.desc}</div>
+      </div>
+      <span class="impact impact-${f.impact==='high'?'high':'med'}">${f.impact.toUpperCase()}</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="terminal">${f.terminal}</div>
+      <div class="how-it-works">
+        <h4>How it works</h4>
+        <ul>${f.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+      </div>
+      <div class="savings">💡 ${f.savings}</div>
+    </div>`;
+  grid.appendChild(card);
+});
+const rl=document.getElementById('roadmap');
+roadmap.forEach(r=>{
+  const el=document.createElement('div');
+  el.className='road-item';
+  el.innerHTML=`<div class="road-num" style="background:${r.color}20;color:${r.color}">${r.n}</div><span class="label">${r.label}</span><span class="why">— ${r.why}</span>`;
+  rl.appendChild(el);
+});
+</script>
+</body>
+</html>
