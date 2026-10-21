@@ -77,7 +77,7 @@ def iter_usage_records(projects_dir=None, since_date=None):
         try:
             if os.path.getmtime(path) < cutoff_epoch:
                 continue
-            project_key = os.path.basename(os.path.dirname(path))
+            project_key = os.path.relpath(path, projects_dir).split(os.sep)[0]
             with open(path, "r", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
                     line = line.strip()
@@ -149,7 +149,7 @@ def iter_all_lines(projects_dir=None, since_date=None):
         try:
             if os.path.getmtime(path) < cutoff_epoch:
                 continue
-            project_key = os.path.basename(os.path.dirname(path))
+            project_key = os.path.relpath(path, projects_dir).split(os.sep)[0]
             with open(path, "r", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
                     line = line.strip()
