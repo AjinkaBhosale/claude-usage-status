@@ -27,7 +27,7 @@ from statusline_core import (
     iter_usage_records, iter_all_lines, price_tokens, default_projects_dir,
 )
 
-SONNET_MODEL = "claude-sonnet-4-6"
+SONNET_MODEL = "claude-sonnet-5-5"
 TICKET_RE    = re.compile(r'\b([A-Z]{2,8}-\d+)\b')
 FILE_PATH_RE = re.compile(r'[\w./\\-]{6,}\.(?:ts|tsx|js|py|json|sh|md|html|css|yaml|yml)\b')
 MODEL_COLORS = ["#79c0ff", "#3fb950", "#d2a8ff", "#ffa657", "#f85149", "#e3b341"]
@@ -909,7 +909,7 @@ def generate_html(usage, waste, epics, budget, insights, since, until, label, pe
         _expl("These Opus calls had <strong>≤5,000 input tokens</strong> and <strong>≤500 output tokens</strong> — "
               "a range where Sonnet 4.6 consistently performs comparably at ~5× lower price. "
               "The table shows exactly what each call cost, what it would have cost on Sonnet, and the per-call saving. "
-              "<strong>Action:</strong> use <code>--model claude-sonnet-4-6</code> by default and escalate to Opus only when "
+              "<strong>Action:</strong> use <code>--model claude-sonnet-5-5</code> by default and escalate to Opus only when "
               "the task needs deep multi-step reasoning, complex code synthesis, or long output.")
         + "<h4 style='margin:14px 0 8px;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#8b949e'>All Candidates</h4>"
         + _tbl(["Date", "Project", "Model", "Input Tok", "Output Tok", "Actual $", "Sonnet $", "Saving $"],
