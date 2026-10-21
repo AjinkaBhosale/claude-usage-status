@@ -9,7 +9,7 @@ A Claude Code status line plugin — shell scripts and Python scripts that rende
 ## Install (core status line)
 
 ```bash
-cp statusline.sh statusline-refresh.sh statusline-usage.py \
+cp statusline.sh statusline-refresh.sh statusline-usage.py statusline_core.py \
    statusline-show.sh statusline-toggle.sh ~/.claude/
 chmod +x ~/.claude/statusline.sh ~/.claude/statusline-refresh.sh \
          ~/.claude/statusline-show.sh ~/.claude/statusline-toggle.sh
@@ -99,11 +99,11 @@ export JIRA_API_TOKEN=your_token_here
 
 **Config**: thresholds, cooldown and the `git_status` flag are read from `~/.claude/.claude-budget.json` inside the existing first `python3` call (no extra process per render). The `notify` block is optional; bad or missing values fall back to defaults.
 
-**Rate matching**: `RATES` keys are matched as substrings of the model ID. More specific keys (e.g. `"opus-4-1"`) must appear before broader ones (e.g. `"opus"`). An unknown model contributes tokens but $0 cost.
+**Rate matching**: `RATES` keys are matched as substrings of the model ID. More specific keys (e.g. `"opus-5-5"`, `"opus-4-1"`) must appear before broader ones (e.g. `"opus"`). Haiku 5.5 carries a `long`/`long_over` tier, applied only by `price_tokens(..., per_message=True)`. An unknown model contributes tokens but $0 cost.
 
 ## Updating pricing
 
-Edit `RATES` at the top of `statusline_core.py`. The standalone `statusline-usage.py` has its own copy of `RATES` for installs that don't use the analysis suite — keep both in sync.
+Edit `RATES` at the top of `statusline_core.py` — it is the only copy (`statusline-usage.py` imports it, so `statusline_core.py` must be installed alongside it). Source: the Anthropic pricing page. Rates differ by model *version*, so add version-specific keys before the family key. A model that matches no key is priced at $0.
 
 ## Customizing
 
