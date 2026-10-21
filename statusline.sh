@@ -11,9 +11,27 @@ LAST_RENDER="$HOME/.claude/.statusline-last.ansi"
 [ -f "$HIDDEN_FLAG" ] && exit 0
 
 # Parse all top-level fields from the input JSON via Python (no jq required).
-eval "$(echo "$input" | python3 -c "
-import json, sys, shlex
+BUDGET_CFG="$HOME/.claude/.claude-budget.json"
+eval "$(echo "$input" | BUDGET_CFG="$BUDGET_CFG" python3 -c "
+import json, sys, shlex, os
 d = json.load(sys.stdin)
+# Optional thresholds from ~/.claude/.claude-budget.json (\"notify\" block, \"git_status\" flag).
+try:
+    cfg = json.load(open(os.environ['BUDGET_CFG']))
+except Exception:
+    cfg = {}
+n = cfg.get('notify', {}) if isinstance(cfg.get('notify'), dict) else {}
+def num(key, default):
+    try:
+        return float(n.get(key, default))
+    except (TypeError, ValueError):
+        return default
+print('N_ENABLED=' + ('0' if n.get('enabled') is False else '1'))
+print('N_COOLDOWN=' + str(int(num('cooldown_min', 10))))
+for key, default in (('context_warn', 80), ('context_crit', 90), ('session_warn', 5),
+                     ('session_crit', 10), ('daily_warn', 30), ('daily_crit', 40)):
+    print('N_' + key.upper() + '=' + shlex.quote(str(num(key, default))))
+print('GIT_STATUS=' + ('0' if cfg.get('git_status') is False else '1'))
 pct_raw = d.get('context_window', {}).get('used_percentage', 0) or 0
 pct = int(float(str(pct_raw).split('.')[0])) if pct_raw else 0
 print('MODEL=' + shlex.quote(str(d.get('model', {}).get('display_name', ''))))
@@ -44,6 +62,26 @@ if [ -n "$TOP" ]; then
   BR=$(git branch --show-current 2>/dev/null)
   [ ${#BR} -gt 28 ] && BR="${BR:0:26}…"
   [ -n "$BR" ] && BRANCH=" 🌿 $BR"
+  # Dirty / untracked / ahead-behind. Local-only (no fetch); cached 5s per repo so
+  # big repos don't slow every render.
+  if [ "$GIT_STATUS" = "1" ] && [ -n "$BR" ]; then
+    GIT_CACHE="$HOME/.claude/.statusline-git-$(printf '%s' "$TOP" | cksum | cut -d' ' -f1)"
+    G_MTIME=$(stat -f %m "$GIT_CACHE" 2>/dev/null || stat -c %Y "$GIT_CACHE" 2>/dev/null || echo 0)  # BSD || GNU
+    if [ ! -f "$GIT_CACHE" ] || [ $(( $(date +%s) - G_MTIME )) -gt 5 ]; then
+      git status --porcelain -b 2>/dev/null > "$GIT_CACHE.tmp" && mv "$GIT_CACHE.tmp" "$GIT_CACHE"
+    fi
+    if [ -f "$GIT_CACHE" ]; then
+      G_HEAD=$(head -1 "$GIT_CACHE")
+      G_DIRTY=$(tail -n +2 "$GIT_CACHE" | grep -vc '^??')
+      G_UNTRK=$(tail -n +2 "$GIT_CACHE" | grep -c '^??')
+      G_AHEAD=$(printf '%s' "$G_HEAD" | sed -n 's/.*ahead \([0-9]*\).*/\1/p')
+      G_BEHIND=$(printf '%s' "$G_HEAD" | sed -n 's/.*behind \([0-9]*\).*/\1/p')
+      [ "$G_DIRTY" -gt 0 ] && BRANCH="$BRANCH ${YELLOW}●${G_DIRTY}${RESET}"
+      [ "$G_UNTRK" -gt 0 ] && BRANCH="$BRANCH ${DIM}?${G_UNTRK}${RESET}"
+      [ -n "$G_AHEAD" ] && BRANCH="$BRANCH ${GREEN}↑${G_AHEAD}${RESET}"
+      [ -n "$G_BEHIND" ] && BRANCH="$BRANCH ${RED}↓${G_BEHIND}${RESET}"
+    fi
+  fi
   [ -f "$TOP/.git" ] && WT=" ${DIM}⑂ wt${RESET}"   # a linked worktree has a .git file, not a dir
 elif [ "$DIR" = "$HOME" ]; then PLACE="~"
 else
@@ -52,12 +90,34 @@ else
 fi
 COST_FMT=$(printf '$%.2f' "$COST")
 
-# ---- Notifications (Windows toast, 10-min cooldown per threshold) ----
+# ---- Notifications (native toast per OS, per-threshold cooldown) ----
+# Thresholds/cooldown come from ~/.claude/.claude-budget.json ("notify" block).
 _notify() {
+  [ "$N_ENABLED" = "1" ] || return
   local key="$1" title="$2" msg="$3"
   local flag="$HOME/.claude/.notify-${key}"
-  [ -f "$flag" ] && [ -z "$(find "$flag" -mmin +10 2>/dev/null)" ] && return
+  [ -f "$flag" ] && [ -z "$(find "$flag" -mmin +"$N_COOLDOWN" 2>/dev/null)" ] && return
   touch "$flag"
+  case "$(uname -s)" in
+    Darwin) _toast_macos "$title" "$msg" ;;
+    Linux)  _toast_linux "$title" "$msg" ;;
+    *)      _toast_windows "$key" "$title" "$msg" ;;
+  esac
+}
+# Title/message travel as argv, never interpolated into script text.
+_toast_macos() {
+  command -v osascript >/dev/null 2>&1 || return
+  osascript -e 'on run argv' -e 'display notification (item 2 of argv) with title (item 1 of argv)' -e 'end run' "$1" "$2" >/dev/null 2>&1 &
+  disown 2>/dev/null
+}
+_toast_linux() {
+  command -v notify-send >/dev/null 2>&1 || return
+  notify-send "$1" "$2" >/dev/null 2>&1 &
+  disown 2>/dev/null
+}
+_toast_windows() {
+  local key="$1" title="$2" msg="$3"
+  command -v powershell.exe >/dev/null 2>&1 || return
   local ps="$HOME/.claude/.notify-${key}.ps1"
   cat > "$ps" << 'PSEOF'
 param($T, $M)
@@ -87,10 +147,11 @@ PSEOF
 }
 cost_gte() { awk -v a="$1" -v b="$2" 'BEGIN{exit !(a+0 >= b+0)}'; }
 
-[ "$PCT" -ge 90 ] && _notify "ctx90" "Claude Code 🔴" "Context at ${PCT}% — run /compact"
-[ "$PCT" -ge 80 ] && [ "$PCT" -lt 90 ] && _notify "ctx80" "Claude Code ⚠️" "Context window at ${PCT}%"
-cost_gte "$COST" 10 && _notify "sess10" "Claude Code 💸" "Session cost ${COST_FMT} — over \$10"
-cost_gte "$COST" 5 && ! cost_gte "$COST" 10 && _notify "sess5" "Claude Code" "Session cost ${COST_FMT} — over \$5"
+fmt_g() { awk -v n="$1" 'BEGIN{printf "%g", n}'; }
+cost_gte "$PCT" "$N_CONTEXT_CRIT" && _notify "ctx_crit" "Claude Code 🔴" "Context at ${PCT}% — run /compact"
+cost_gte "$PCT" "$N_CONTEXT_WARN" && ! cost_gte "$PCT" "$N_CONTEXT_CRIT" && _notify "ctx_warn" "Claude Code ⚠️" "Context window at ${PCT}%"
+cost_gte "$COST" "$N_SESSION_CRIT" && _notify "sess_crit" "Claude Code 💸" "Session cost ${COST_FMT} — over \$$(fmt_g "$N_SESSION_CRIT")"
+cost_gte "$COST" "$N_SESSION_WARN" && ! cost_gte "$COST" "$N_SESSION_CRIT" && _notify "sess_warn" "Claude Code" "Session cost ${COST_FMT} — over \$$(fmt_g "$N_SESSION_WARN")"
 
 # ---- Day / MTD usage (cached, refreshed in the background) ----
 USAGE_CACHE="$HOME/.claude/.statusline-usage-cache.json"
@@ -147,8 +208,8 @@ except Exception:
     D_COST_FMT=$(printf '$%.2f' "$D_COST")
     M_COST_FMT=$(printf '$%.2f' "$M_COST")
     LINE2="${DATE_SEG} ${DIM}┃${RESET} ${SESSION} ${DIM}┃${RESET} today ${YELLOW}${D_COST_FMT}${RESET}${DIM}·${RESET}${CYAN}${D_TOK}${RESET} ${DIM}tok ┃${RESET} MTD ${YELLOW}${M_COST_FMT}${RESET}${DIM}·${RESET}${CYAN}${M_TOK}${RESET} ${DIM}tok${RESET}"
-    cost_gte "$D_COST" 40 && _notify "day40" "Claude Code 🔴" "Daily spend ${D_COST_FMT} — over \$40"
-    cost_gte "$D_COST" 30 && ! cost_gte "$D_COST" 40 && _notify "day30" "Claude Code ⚠️" "Daily spend ${D_COST_FMT} — over \$30"
+    cost_gte "$D_COST" "$N_DAILY_CRIT" && _notify "day_crit" "Claude Code 🔴" "Daily spend ${D_COST_FMT} — over \$$(fmt_g "$N_DAILY_CRIT")"
+    cost_gte "$D_COST" "$N_DAILY_WARN" && ! cost_gte "$D_COST" "$N_DAILY_CRIT" && _notify "day_warn" "Claude Code ⚠️" "Daily spend ${D_COST_FMT} — over \$$(fmt_g "$N_DAILY_WARN")"
   else
     LINE2="${DATE_SEG} ${DIM}┃${RESET} ${SESSION} ${DIM}┃${RESET} today/MTD — computing…"
   fi

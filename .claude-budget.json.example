@@ -4,5 +4,16 @@
   "epic": {
     "CSA-12345": 50.00,
     "ILLUM-5678": 30.00
-  }
+  },
+  "notify": {
+    "enabled": true,
+    "cooldown_min": 10,
+    "context_warn": 80,
+    "context_crit": 90,
+    "session_warn": 5,
+    "session_crit": 10,
+    "daily_warn": 30,
+    "daily_crit": 40
+  },
+  "git_status": true
 }

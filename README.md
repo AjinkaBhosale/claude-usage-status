@@ -19,7 +19,7 @@ Five scripts and two cache files:
 
 | File | Role |
 |------|------|
-| `statusline.sh` | Entry point Claude runs on every render. Reads the JSON Claude pipes to stdin, draws the bar, fires Windows toast notifications at cost/context thresholds, and triggers a background refresh when the cache is stale (>60s). Never blocks the prompt. |
+| `statusline.sh` | Entry point Claude runs on every render. Reads the JSON Claude pipes to stdin, draws the bar, fires native notifications (macOS/Linux/Windows) at cost/context thresholds, and triggers a background refresh when the cache is stale (>60s). Never blocks the prompt. |
 | `statusline-refresh.sh` | Background worker. Runs the Python aggregator and (optionally) the `rtk` savings parse under an atomic lock. |
 | `statusline-usage.py` | Scans transcripts, sums per-model token usage, prices it, buckets by local date, writes the usage cache. |
 | `statusline-toggle.sh` | Toggle the status bar on/off. Creates/removes `~/.claude/.statusline-hidden`. |
@@ -90,13 +90,21 @@ bash ~/.claude/statusline-show.sh
 When the bar is hidden, `statusline-show.sh` still prints the last cached render
 and warns you if it is more than 5 minutes stale.
 
-## Notifications (Windows)
+## Notifications (macOS, Linux, Windows)
 
-On Windows (WSL/Git Bash with `powershell.exe` and `cygpath` available), the
-status line fires native toast notifications at these thresholds:
+The status line fires native notifications at the thresholds below. The backend
+is picked automatically:
 
-| Threshold | Title | Message |
-|-----------|-------|---------|
+| OS | Backend | Needs |
+|----|---------|-------|
+| macOS | `osascript` (Notification Center) | built in |
+| Linux | `notify-send` | `libnotify-bin` / `libnotify` |
+| Windows (Git Bash/WSL) | PowerShell toast | `powershell.exe` (+ `cygpath`) |
+
+If the backend isn't available, notifications are silently skipped.
+
+| Threshold (default) | Title | Message |
+|---------------------|-------|---------|
 | Context ≥ 80% | Claude Code ⚠️ | Context window at X% |
 | Context ≥ 90% | Claude Code 🔴 | Context at X% — run /compact |
 | Session cost ≥ $5 | Claude Code | Session cost $X.XX — over $5 |
@@ -104,9 +112,36 @@ status line fires native toast notifications at these thresholds:
 | Daily spend ≥ $30 | Claude Code ⚠️ | Daily spend $X.XX — over $30 |
 | Daily spend ≥ $40 | Claude Code 🔴 | Daily spend $X.XX — over $40 |
 
-Each threshold fires at most once per 10 minutes (enforced by a flag file under
-`~/.claude/`). On non-Windows systems or when `powershell.exe` is absent,
-notifications are silently skipped.
+Each threshold fires at most once per cooldown window (default 10 minutes,
+enforced by a flag file under `~/.claude/`).
+
+### Configuring thresholds
+
+Add an optional `notify` block to `~/.claude/.claude-budget.json`. Every key is
+optional; missing or invalid values fall back to the defaults shown here.
+
+```json
+{
+  "notify": {
+    "enabled": true,
+    "cooldown_min": 10,
+    "context_warn": 80, "context_crit": 90,
+    "session_warn": 5,  "session_crit": 10,
+    "daily_warn": 30,   "daily_crit": 40
+  },
+  "git_status": true
+}
+```
+
+Set `"enabled": false` to turn notifications off while keeping the bar.
+
+## Git state
+
+Next to the branch the bar shows `●N` (modified/staged files), `?N` (untracked),
+`↑N` (commits ahead of upstream) and `↓N` (behind). Zero values are hidden. It
+reads local state only (no fetch), so `↓` reflects your last `git fetch`. The
+result is cached for 5 seconds per repo so large repos don't slow rendering.
+Set `"git_status": false` in `~/.claude/.claude-budget.json` to disable it.
 
 ## Worktree detection
 
@@ -154,8 +189,8 @@ but $0 cost** — so an unknown model silently undercounts spend.
   `statusline.sh` control the look.
 - **Refresh interval** — the `-mmin +1` (60s) test in `statusline.sh` controls
   how often the background scan runs.
-- **Notification cooldown** — the `-mmin +10` test in the `_notify()` function
-  controls how often the same threshold can re-fire (default: 10 minutes).
+- **Notification thresholds and cooldown** — the `notify` block in
+  `~/.claude/.claude-budget.json` (see above), no script edits needed.
 
 ## New Analysis Scripts
 
