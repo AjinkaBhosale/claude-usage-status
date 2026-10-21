@@ -18,6 +18,29 @@ from statusline_core import iter_all_lines, iter_usage_records, default_projects
 
 TICKET_RE = re.compile(r'\b([A-Z]{2,8}-\d+)\b')
 
+_TICKET_BLOCKLIST = frozenset({
+    "SONNET", "HAIKU", "OPUS", "CLAUDE", "GPT", "GEMINI", "MISTRAL", "LLAMA",
+    "UTF", "ASCII", "JSON", "YAML", "HTML", "HTTP", "HTTPS", "SQL",
+    "ISBN", "UUID", "GUID", "RFC", "ISO", "API", "SDK", "IDE", "MFE",
+    "HEIGHT", "WIDTH", "MIN", "MAX", "TOP", "LEFT", "RIGHT", "BOTTOM",
+    "MARGIN", "PADDING", "BORDER", "GAP", "SIZE", "FLEX", "GRID",
+    "RADIUS", "OPACITY", "SCALE", "ROTATE", "TRANSLATE",
+    "RED", "BLUE", "GREEN", "GRAY", "GREY", "WHITE", "BLACK", "PURPLE",
+    "YELLOW", "PINK", "ORANGE", "TEAL", "CYAN", "INDIGO", "VIOLET",
+    "SLATE", "ZINC", "STONE", "AMBER", "LIME", "EMERALD", "SKY", "ROSE",
+    "ES", "EN", "FR", "DE", "ZH", "JA", "KO", "PT", "IT", "NL",
+    "ID", "NO", "OK", "VS", "V",
+    "ACCT", "TEST", "DEMO", "MOCK", "TEMP", "SAMPLE", "FOO", "BAR",
+})
+
+
+def _valid_ticket(ticket: str) -> bool:
+    try:
+        prefix, num = ticket.rsplit("-", 1)
+        return prefix not in _TICKET_BLOCKLIST and len(num) >= 2
+    except ValueError:
+        return False
+
 
 def get_branch_tickets(project_key):
     tickets = set()
@@ -56,7 +79,7 @@ def main():
             content = " ".join(
                 c.get("text", "") for c in content if isinstance(c, dict)
             )
-        tickets = TICKET_RE.findall(str(content).upper())
+        tickets = [t for t in TICKET_RE.findall(str(content).upper()) if _valid_ticket(t)]
         if tickets:
             conv_id = line.get("requestId") or line.get("project_key", "")
             conv_tickets[conv_id].update(tickets)

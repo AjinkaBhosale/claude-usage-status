@@ -9,7 +9,7 @@ A Claude Code status line plugin — shell scripts and Python scripts that rende
 ## Install (core status line)
 
 ```bash
-cp statusline.sh statusline-refresh.sh statusline-usage.py \
+cp statusline.sh statusline-refresh.sh statusline-usage.py statusline_core.py \
    statusline-show.sh statusline-toggle.sh ~/.claude/
 chmod +x ~/.claude/statusline.sh ~/.claude/statusline-refresh.sh \
          ~/.claude/statusline-show.sh ~/.claude/statusline-toggle.sh
@@ -33,7 +33,7 @@ chmod +x ~/.claude/statusline-budget-check.sh
 
 | Script | Role |
 |--------|------|
-| `statusline.sh` | Entry point called on every render. Reads JSON from stdin, draws the bar, fires Windows toast notifications, triggers background refresh when cache is stale (>60s). Must never block. |
+| `statusline.sh` | Entry point called on every render. Reads JSON from stdin, draws the bar, fires native notifications, triggers background refresh when cache is stale (>60s). Must never block. |
 | `statusline-refresh.sh` | Background worker. Runs `statusline-usage.py` and optionally parses `rtk gain --graph` under an atomic `mkdir` lock. |
 | `statusline-usage.py` | Scans `~/.claude/projects/**/*.jsonl`, sums per-model token usage, prices it, buckets by local date, writes cache JSON. |
 | `statusline-toggle.sh` | Creates/removes `~/.claude/.statusline-hidden` to show/hide the bar. |
@@ -62,7 +62,8 @@ chmod +x ~/.claude/statusline-budget-check.sh
 | `.statusline-last.ansi` | Last rendered ANSI output (used by `statusline-show.sh`) |
 | `.statusline-usage.lock/` | `mkdir`-based atomic lock; reaped after 5 minutes if stale |
 | `.statusline-hidden` | Presence suppresses all output |
-| `.notify-<key>` | Per-threshold cooldown flags for Windows toast notifications |
+| `.notify-<key>` | Per-threshold cooldown flags (`ctx_warn`, `ctx_crit`, `sess_warn`, `sess_crit`, `day_warn`, `day_crit`) |
+| `.statusline-git-<hash>` | 5s cache of `git status --porcelain -b` per repo |
 
 ## Budget config
 
@@ -94,17 +95,18 @@ export JIRA_API_TOKEN=your_token_here
 
 **JSON parsing**: Uses `python3` everywhere; `jq` is not required.
 
-**Windows notifications**: `statusline.sh` writes a `.ps1` file and calls `powershell.exe` via a `disown`ed background process. Falls back silently if `powershell.exe` or `cygpath` are absent.
+**Notifications**: `_notify()` applies the cooldown, then dispatches on `uname -s` to `_toast_macos` (`osascript`, title/message passed as argv), `_toast_linux` (`notify-send`) or `_toast_windows` (writes a `.ps1`, calls `powershell.exe`). All run as `disown`ed background processes and skip silently if the tool is missing.
 
-**Rate matching**: `RATES` keys are matched as substrings of the model ID. More specific keys (e.g. `"opus-4-1"`) must appear before broader ones (e.g. `"opus"`). An unknown model contributes tokens but $0 cost.
+**Config**: thresholds, cooldown and the `git_status` flag are read from `~/.claude/.claude-budget.json` inside the existing first `python3` call (no extra process per render). The `notify` block is optional; bad or missing values fall back to defaults.
+
+**Rate matching**: `RATES` keys are matched as substrings of the model ID. More specific keys (e.g. `"opus-5-5"`, `"opus-4-1"`) must appear before broader ones (e.g. `"opus"`). Haiku 5.5 carries a `long`/`long_over` tier, applied only by `price_tokens(..., per_message=True)`. An unknown model contributes tokens but $0 cost.
 
 ## Updating pricing
 
-Edit `RATES` at the top of `statusline_core.py`. The standalone `statusline-usage.py` has its own copy of `RATES` for installs that don't use the analysis suite — keep both in sync.
+Edit `RATES` at the top of `statusline_core.py` — it is the only copy (`statusline-usage.py` imports it, so `statusline_core.py` must be installed alongside it). Source: the Anthropic pricing page. Rates differ by model *version*, so add version-specific keys before the family key. A model that matches no key is priced at $0.
 
 ## Customizing
 
 - **Colors / layout**: ANSI vars and the final `echo -e` lines in `statusline.sh`
 - **Cache refresh interval**: `-mmin +1` test in `statusline.sh` (currently 60s)
-- **Notification cooldown**: `-mmin +10` test in the `_notify()` function (currently 10 min)
-- **Notification thresholds**: context at 80%/90%, session at $5/$10, daily at $30/$40
+- **Notification cooldown and thresholds**: `notify` block in `~/.claude/.claude-budget.json` (defaults: 10 min; context 80/90%, session $5/$10, daily $30/$40)
